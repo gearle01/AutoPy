@@ -29,6 +29,8 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
+import { auth } from '../services/firebase';
+import { saveSettings, getSettings } from '../services/firebase';
 
 // Configurações fictícias para demonstração
 // Numa implementação real, estas seriam carregadas/salvas através da API
@@ -75,37 +77,73 @@ function SettingsPage() {
   const [loading, setLoading] = useState(false);
   
   // Carrega as configurações
-  const loadSettings = () => {
+  const loadSettings = async () => {
     setLoading(true);
     try {
-      // Tenta carregar do localStorage
-      const savedSettings = localStorage.getItem('autoFbSettings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+      const userId = auth.currentUser.uid;
+      
+      // Tenta carregar do Firebase
+      const firebaseSettings = await getSettings(userId);
+      
+      if (firebaseSettings) {
+        setSettings(firebaseSettings);
+      } else {
+        // Fallback para localStorage se não houver dados no Firebase
+        const savedSettings = localStorage.getItem('autoFbSettings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          setSettings(parsedSettings);
+          // Salva no Firebase para uso futuro
+          await saveSettings(userId, parsedSettings);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
       toast.error('Erro ao carregar configurações');
+      
+      // Fallback para localStorage
+      try {
+        const savedSettings = localStorage.getItem('autoFbSettings');
+        if (savedSettings) {
+          setSettings(JSON.parse(savedSettings));
+        }
+      } catch (e) {
+        // Ignora erro de fallback
+      }
     } finally {
       setLoading(false);
     }
   };
   
   // Salva as configurações
-  const saveSettings = () => {
+  const saveSettings = async () => {
     setLoading(true);
     try {
+      const userId = auth.currentUser.uid;
+      
+      // Salva no Firebase
+      await saveSettings(userId, settings);
+      
+      // Backup no localStorage
       localStorage.setItem('autoFbSettings', JSON.stringify(settings));
+      
       toast.success('Configurações salvas com sucesso');
       setSettingsChanged(false);
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast.error('Erro ao salvar configurações');
+      
+      // Tenta salvar no localStorage como fallback
+      try {
+        localStorage.setItem('autoFbSettings', JSON.stringify(settings));
+        toast.info('Configurações salvas localmente como fallback');
+      } catch (e) {
+        // Ignora erro de fallback
+      }
     } finally {
       setLoading(false);
     }
   };
-  
   // Reseta as configurações para o padrão
   const resetSettings = () => {
     setSettings(DEFAULT_SETTINGS);

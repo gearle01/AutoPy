@@ -1,9 +1,12 @@
+// frontend/src/App.js (modificado)
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { auth } from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Componentes
 import Navbar from './components/Navbar';
@@ -16,6 +19,7 @@ import SchedulePage from './pages/SchedulePage';
 import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
 import LogsPage from './pages/LogsPage';
+import LoginPage from './pages/LoginPage';
 
 // Serviços
 import { getStatus } from './services/api';
@@ -55,6 +59,31 @@ const lightTheme = createTheme({
     },
   },
 });
+
+// Componente para rotas protegidas
+function ProtectedRoute({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+  
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
+}
 
 function App() {
   const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
@@ -107,28 +136,48 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <div className="app">
-          <Navbar 
-            toggleDarkMode={toggleDarkMode} 
-            darkMode={darkMode} 
-            toggleSidebar={toggleSidebar}
-            systemStatus={systemStatus}
-            refreshStatus={fetchStatus}
-          />
-          <div className="content-container">
-            <Sidebar open={sidebarOpen} />
-            <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-              <Routes>
-                <Route path="/" element={<Dashboard systemStatus={systemStatus} refreshStatus={fetchStatus} />} />
-                <Route path="/groups" element={<GroupsPage />} />
-                <Route path="/schedule" element={<SchedulePage />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/logs" element={<LogsPage />} />
-              </Routes>
-            </main>
-          </div>
-        </div>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <div className="app">
+                <Navbar 
+                  toggleDarkMode={toggleDarkMode} 
+                  darkMode={darkMode} 
+                  toggleSidebar={toggleSidebar}
+                  systemStatus={systemStatus}
+                  refreshStatus={fetchStatus}
+                />
+                <div className="content-container">
+                  <Sidebar open={sidebarOpen} />
+                  <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+                    <Dashboard systemStatus={systemStatus} refreshStatus={fetchStatus} />
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/groups" element={
+            <ProtectedRoute>
+              <div className="app">
+                <Navbar 
+                  toggleDarkMode={toggleDarkMode} 
+                  darkMode={darkMode} 
+                  toggleSidebar={toggleSidebar}
+                  systemStatus={systemStatus}
+                  refreshStatus={fetchStatus}
+                />
+                <div className="content-container">
+                  <Sidebar open={sidebarOpen} />
+                  <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+                    <GroupsPage />
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
+          {/* Repita para outras rotas (SchedulePage, AccountPage, etc.) */}
+        </Routes>
       </Router>
       <ToastContainer position="bottom-right" />
     </ThemeProvider>

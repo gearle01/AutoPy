@@ -1,0 +1,13 @@
+[
+  {
+    "id": "task_1",
+    "type": "post",
+    "target_id": "123456789",
+    "target_name": "Grupo de Exemplo",
+    "content": "Este \u00e9 um post de exemplo agendado para amanh\u00e3.",
+    "scheduled_time": "2025-04-29 17:37",
+    "completed": false,
+    "media_path": "",
+    "category": "tech"
+  }
+]

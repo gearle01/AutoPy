@@ -1,0 +1,31 @@
+{
+    "greetings": [
+        "Ol\u00e1",
+        "Oi",
+        "E a\u00ed",
+        "Bom dia",
+        "Boa tarde",
+        "Boa noite"
+    ],
+    "closings": [
+        "Abra\u00e7os",
+        "At\u00e9 mais",
+        "Valeu",
+        "Obrigado",
+        "Gratid\u00e3o"
+    ],
+    "transitions": [
+        "Ali\u00e1s",
+        "Por falar nisso",
+        "Inclusive",
+        "Al\u00e9m disso",
+        "Pensando bem"
+    ],
+    "opinions": [
+        "Acho que",
+        "Na minha opini\u00e3o",
+        "Acredito que",
+        "Tenho certeza que",
+        "Parece que"
+    ]
+}

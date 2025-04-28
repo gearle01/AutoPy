@@ -1,0 +1,32 @@
+{
+  "name": "autopy",
+  "version": "1.0.0",
+  "description": "Automação para Facebook com interface web",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && python app.py",
+    "start:frontend": "cd frontend && npm start",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "install:backend": "cd backend && pip install -r requirements.txt",
+    "install:frontend": "cd frontend && npm install",
+    "setup": "npm run install:all && npm run install:playwright",
+    "install:playwright": "cd backend && playwright install",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "facebook",
+    "automation",
+    "bot",
+    "python",
+    "react"
+  ],
+  "author": "gearle01",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "firebase": "^11.6.1"
+  }
+}

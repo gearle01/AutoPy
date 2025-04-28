@@ -1,0 +1,22 @@
+{
+    "question": [
+        "Algu\u00e9m poderia me ajudar com {topic}? Estou tentando {action} mas {problem}.",
+        "O que voc\u00eas acham sobre {topic}? Vale a pena {action}?",
+        "D\u00favida: como {action} quando {problem}? Algu\u00e9m tem experi\u00eancia com {topic}?"
+    ],
+    "info_sharing": [
+        "Acabei de descobrir isso sobre {topic}: {fact}. Achei super interessante!",
+        "Dica para quem trabalha com {topic}: {fact}. Isso me ajudou muito a {action}.",
+        "Para quem se interessa por {topic}, olha s\u00f3: {fact}. #DicaValiosa"
+    ],
+    "opinion": [
+        "Na minha opini\u00e3o, {topic} \u00e9 fundamental para {action}. O que voc\u00eas acham?",
+        "Tenho pensado muito sobre {topic} ultimamente. Acho que {opinion}.",
+        "Sinceramente, {opinion} quando se trata de {topic}. Algu\u00e9m concorda?"
+    ],
+    "discussion": [
+        "Vamos debater sobre {topic}? Eu {opinion}, mas gostaria de ouvir outras perspectivas.",
+        "Tema para discuss\u00e3o: {topic}. {question}?",
+        "O que est\u00e1 acontecendo com {topic} atualmente? {question}?"
+    ]
+}

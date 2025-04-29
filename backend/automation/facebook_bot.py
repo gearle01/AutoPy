@@ -13,7 +13,7 @@ import time
 import os
 from datetime import datetime
 from playwright.async_api import async_playwright
-from ..utils.logger import setup_logger
+from utils.logger import setup_logger
 from .behavior import HumanBehavior
 
 

@@ -176,7 +176,82 @@ function App() {
               </div>
             </ProtectedRoute>
           } />
-          {/* Repita para outras rotas (SchedulePage, AccountPage, etc.) */}
+          <Route path="/schedule" element={
+            <ProtectedRoute>
+              <div className="app">
+                <Navbar 
+                  toggleDarkMode={toggleDarkMode} 
+                  darkMode={darkMode} 
+                  toggleSidebar={toggleSidebar}
+                  systemStatus={systemStatus}
+                  refreshStatus={fetchStatus}
+                />
+                <div className="content-container">
+                  <Sidebar open={sidebarOpen} />
+                  <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+                    <SchedulePage />
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/account" element={
+            <ProtectedRoute>
+              <div className="app">
+                <Navbar 
+                  toggleDarkMode={toggleDarkMode} 
+                  darkMode={darkMode} 
+                  toggleSidebar={toggleSidebar}
+                  systemStatus={systemStatus}
+                  refreshStatus={fetchStatus}
+                />
+                <div className="content-container">
+                  <Sidebar open={sidebarOpen} />
+                  <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+                    <AccountPage />
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <div className="app">
+                <Navbar 
+                  toggleDarkMode={toggleDarkMode} 
+                  darkMode={darkMode} 
+                  toggleSidebar={toggleSidebar}
+                  systemStatus={systemStatus}
+                  refreshStatus={fetchStatus}
+                />
+                <div className="content-container">
+                  <Sidebar open={sidebarOpen} />
+                  <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+                    <SettingsPage />
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/logs" element={
+            <ProtectedRoute>
+              <div className="app">
+                <Navbar 
+                  toggleDarkMode={toggleDarkMode} 
+                  darkMode={darkMode} 
+                  toggleSidebar={toggleSidebar}
+                  systemStatus={systemStatus}
+                  refreshStatus={fetchStatus}
+                />
+                <div className="content-container">
+                  <Sidebar open={sidebarOpen} />
+                  <main className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+                    <LogsPage />
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
       <ToastContainer position="bottom-right" />

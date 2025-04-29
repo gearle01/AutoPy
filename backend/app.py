@@ -695,8 +695,4 @@ def initialize_project_files():
 
 # Inicializa o projeto quando o arquivo é executado diretamente
 if __name__ == '__main__':
-    # Inicializa os arquivos necessários
-    initialize_project_files()
-    
-    # Inicia o servidor Flask
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True, port=5000)  # ou qualquer porta que você esteja usando

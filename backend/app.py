@@ -10,6 +10,7 @@ import json
 import asyncio
 import threading
 import time
+import sys
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -380,6 +381,13 @@ def get_account():
     """Retorna informações da conta configurada"""
     account = load_accounts()
     
+    # Garantir que estamos trabalhando com um dicionário
+    if isinstance(account, list):
+        if len(account) > 0:
+            account = account[0]  # Usar o primeiro elemento
+        else:
+            account = {}  # Lista vazia, retorna dicionário vazio
+    
     # Remove a senha da resposta por segurança
     if "password" in account:
         account_copy = account.copy()
@@ -394,10 +402,26 @@ def update_account():
     data = request.json
     account = load_accounts()
     
-    # Atualiza apenas os campos fornecidos
-    for key, value in data.items():
-        if key != "cookies":  # Não sobrescreve cookies pelo frontend
-            account[key] = value
+    # Garantir que estamos trabalhando com um dicionário
+    if isinstance(account, list):
+        # Se for uma lista, use o primeiro elemento ou crie um novo dicionário
+        if len(account) > 0:
+            account_dict = account[0]
+            # Atualiza os campos
+            for key, value in data.items():
+                if key != "cookies":  # Não sobrescreve cookies pelo frontend
+                    account_dict[key] = value
+            # Substitui o primeiro elemento da lista
+            account[0] = account_dict
+        else:
+            # Se a lista estiver vazia, adicione um novo dicionário
+            account_dict = {k: v for k, v in data.items() if k != "cookies"}
+            account.append(account_dict)
+    else:
+        # Se já for um dicionário, atualize normalmente
+        for key, value in data.items():
+            if key != "cookies":  # Não sobrescreve cookies pelo frontend
+                account[key] = value
     
     success = save_account(account)
     return jsonify({"success": success})
@@ -478,36 +502,89 @@ def generate_post():
 @app.route('/api/test-bot', methods=['POST'])
 def test_bot():
     """Testa a conexão do bot com o Facebook"""
-    data = request.json
-    email = data.get("email")
-    password = data.get("password")
-    
-    async def run_test():
-        bot = None
-        try:
-            # Inicia o bot
-            bot = await FacebookBot().start()
+    try:
+        print("1. Recebendo dados da requisição")
+        data = request.get_json(force=True)
+        print(f"2. Dados recebidos: {data}, tipo: {type(data)}")
+        
+        # TRATAMENTO ROBUSTO - log de cada passo
+        if isinstance(data, list):
+            print("3. Dados são uma lista")
+            if not data:
+                print("3.1. Lista vazia")
+                return jsonify({"success": False, "message": "Nenhum dado fornecido"}), 400
             
-            # Tenta fazer login
-            login_success = await bot.login(email, password)
-            
-            if login_success:
-                return {"success": True, "message": "Login realizado com sucesso"}
-            else:
-                return {"success": False, "message": "Falha no login, verifique o e-mail e senha"}
+            print(f"3.2. Primeiro item: {data[0]}, tipo: {type(data[0])}")
+            data = data[0]  # usa o primeiro item da lista
+        
+        print(f"4. Após tratamento: {data}, tipo: {type(data)}")
+        if not isinstance(data, dict):
+            print(f"4.1. Não é um dicionário, é {type(data)}")
+            return jsonify({"success": False, "message": f"Formato inválido: esperado dicionário, recebido {type(data).__name__}"}), 400
+        
+        email = data.get("email")
+        password = data.get("password")
+        print(f"5. Email: {email}, Senha: {'*' * len(password) if password else None}")
+        
+        if not email or not password:
+            print("5.1. Email ou senha não fornecidos")
+            return jsonify({"success": False, "message": "Email e senha são obrigatórios"}), 400
+        
+        print("6. Iniciando função assíncrona")
+        
+        async def run_test():
+            bot = None
+            try:
+                print("7. Importando FacebookBot")
+                from automation.facebook_bot import FacebookBot
                 
+                print("8. Iniciando o bot")
+                bot = await FacebookBot().start()
+                
+                print("9. Tentando login")
+                login_success = await bot.login(email, password)
+                
+                if login_success:
+                    print("10. Login bem-sucedido")
+                    return {"success": True, "message": "Login realizado com sucesso"}
+                else:
+                    print("10. Login falhou")
+                    return {"success": False, "message": "Falha no login, verifique o e-mail e senha"}
+            except Exception as e:
+                print(f"X. Erro durante execução: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                return {"success": False, "message": f"Erro: {str(e)}"}
+            finally:
+                if bot:
+                    print("11. Fechando o bot")
+                    await bot.close()
+        
+        print("12. Configurando event loop")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            print("13. Executando run_test")
+            result = loop.run_until_complete(run_test())
+            print(f"14. Resultado: {result}")
         except Exception as e:
-            return {"success": False, "message": f"Erro: {str(e)}"}
+            print(f"Y. Erro no event loop: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({"success": False, "message": f"Erro: {str(e)}"}), 500
         finally:
-            if bot:
-                await bot.close()
+            print("15. Fechando event loop")
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+        
+        print("16. Retornando resposta")
+        return jsonify(result)
     
-    # Executa o teste de forma assíncrona
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(run_test())
-    
-    return jsonify(result)
+    except Exception as e:
+        print(f"Z. Erro global: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": f"Erro do servidor: {str(e)}"}), 500
 
 @app.route('/api/manual-post', methods=['POST'])
 def manual_post():

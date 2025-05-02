@@ -60,14 +60,14 @@ class FacebookBot:
         await asyncio.sleep(sleep_time)
         
     async def start(self):
-        """Inicia o navegador e abre uma nova página"""
+        #Inicia o navegador e abre uma nova página"""
         self.logger.info("Iniciando o navegador")
         playwright = await async_playwright().start()
         self.browser = await playwright.chromium.launch(
             headless=self.headless,
             slow_mo=self.slow_mo
         )
-        
+    
         # Cria um contexto com tamanho de tela aleatório para cada execução
         viewport = self.behavior.random_viewport()
         self.context = await self.browser.new_context(
@@ -75,39 +75,41 @@ class FacebookBot:
             user_agent=self.behavior.random_user_agent(),
             locale=self.behavior.random_locale()
         )
-        
+    
         # Ativa o cache para parecer usuário legítimo
-        await self.context.add_cookies(self.config.get("cookies", []))
+        # Corrigido: verifica se config é dicionário antes de usar .get()
+        cookies = self.config.get("cookies", []) if isinstance(self.config, dict) else []
+        await self.context.add_cookies(cookies)
+    
+        # Cria a página antes de tentar configurar rotas
         self.page = await self.context.new_page()
-        
+    
         # Configura interceptação de requisições
         await self.page.route("**/*.{png,jpg,jpeg}", lambda route: route.continue_())
-        
+    
         self.logger.info(f"Navegador iniciado com viewport {viewport}")
         return self
     
     async def login(self, email=None, password=None):
-        """
-        Realiza login no Facebook
-        
-        Args:
-            email (str): Email ou telefone para login
-            password (str): Senha da conta
-        """
+        """Realiza login no Facebook com debugging aprimorado"""
         if not email:
             email = self.config.get("email")
         if not password:
             password = self.config.get("password")
-            
+        
         if not email or not password:
             self.logger.error("Email ou senha não fornecidos")
             return False
-            
+        
         try:
             self.logger.info(f"Tentando login com {email}")
             
-            # Navega para a página de login
+            # Navega para a página de login com modo debug
+            self.logger.info("Navegando para facebook.com")
             await self.page.goto("https://www.facebook.com/")
+            
+            # Tirar screenshot para debug
+            await self.page.screenshot(path="D:/AutoPy/data/logs/pre_login.png")
             
             # Verifica se já está logado
             if await self._check_if_logged_in():
@@ -117,38 +119,106 @@ class FacebookBot:
                 
             # Aceita cookies se necessário
             try:
+                self.logger.info("Procurando banner de cookies")
                 cookie_button = await self.page.wait_for_selector('[data-testid="cookie-policy-manage-dialog-accept-button"]', timeout=5000)
                 if cookie_button:
+                    self.logger.info("Banner de cookies encontrado, aceitando")
                     await self.behavior.human_click(self.page, cookie_button)
-            except:
-                self.logger.info("Banner de cookies não encontrado ou já aceito")
+            except Exception as e:
+                self.logger.info(f"Banner de cookies não encontrado: {e}")
             
-            # Simula digitação humana
-            await self.page.fill('#email', email, delay=self.behavior.typing_speed())
+            # Captura todos os campos de input na página para verificar
+            inputs = await self.page.query_selector_all('input')
+            self.logger.info(f"Campos encontrados: {len(inputs)}")
+            for i, input_field in enumerate(inputs):
+                input_type = await input_field.get_attribute('type')
+                input_name = await input_field.get_attribute('name')
+                input_id = await input_field.get_attribute('id')
+                self.logger.info(f"Input {i}: type={input_type}, name={input_name}, id={input_id}")
+            
+            # Encontra o campo de email com mais robustez
+            self.logger.info("Procurando campo de email")
+            email_field = await self.page.query_selector('#email')
+            if not email_field:
+                email_field = await self.page.query_selector('input[name="email"]')
+            if not email_field:
+                self.logger.error("Campo de email não encontrado!")
+                await self.page.screenshot(path="D:/AutoPy/data/logs/email_not_found.png")
+                return False
+            
+            # Simula digitação humana no email usando type em vez de fill
+            self.logger.info("Digitando email")
+            await email_field.type(email, delay=self.behavior.typing_speed())
             await self._random_sleep(0.5, 1.5)
-            await self.page.fill('#pass', password, delay=self.behavior.typing_speed())
+            
+            # Encontra o campo de senha com mais robustez
+            self.logger.info("Procurando campo de senha")
+            password_field = await self.page.query_selector('#pass')
+            if not password_field:
+                password_field = await self.page.query_selector('input[name="pass"]')
+            if not password_field:
+                self.logger.error("Campo de senha não encontrado!")
+                await self.page.screenshot(path="D:/AutoPy/data/logs/password_not_found.png")
+                return False
+            
+            # Simula digitação humana na senha usando type em vez de fill
+            self.logger.info("Digitando senha")
+            await password_field.type(password, delay=self.behavior.typing_speed())
             await self._random_sleep(0.8, 2)
             
+            # Captura screenshot antes de clicar no botão
+            await self.page.screenshot(path="D:/AutoPy/data/logs/before_login_click.png")
+            
+            # Procura por botões na página
+            buttons = await self.page.query_selector_all('button')
+            self.logger.info(f"Botões encontrados: {len(buttons)}")
+            for i, button in enumerate(buttons):
+                button_text = await button.inner_text()
+                button_type = await button.get_attribute('type')
+                button_name = await button.get_attribute('name')
+                self.logger.info(f"Botão {i}: text={button_text}, type={button_type}, name={button_name}")
+            
+            # Clica no botão de login com robustez
+            self.logger.info("Procurando botão de login")
+            login_button = await self.page.query_selector('[data-testid="royal_login_button"]')
+            if not login_button:
+                login_button = await self.page.query_selector('button[name="login"]')
+            if not login_button:
+                login_button = await self.page.query_selector('button[type="submit"]')
+            if not login_button:
+                login_button = await self.page.query_selector('button:has-text("Entrar")')
+            
+            if not login_button:
+                self.logger.error("Botão de login não encontrado!")
+                await self.page.screenshot(path="D:/AutoPy/data/logs/login_button_not_found.png")
+                return False
+            
             # Clica no botão de login
-            login_button = await self.page.wait_for_selector('[data-testid="royal_login_button"]')
+            self.logger.info("Clicando no botão de login")
             await self.behavior.human_click(self.page, login_button)
             
             # Aguarda até que a página carregue completamente
+            self.logger.info("Aguardando carregamento da página")
             await self.page.wait_for_load_state("networkidle")
             
+            # Captura screenshot após clicar
+            await self.page.screenshot(path="D:/AutoPy/data/logs/after_login_click.png")
+            
+            # Verifica se há mensagens de erro na página
+            error_messages = await self.page.query_selector_all('[role="alert"]')
+            if error_messages:
+                for error in error_messages:
+                    error_text = await error.inner_text()
+                    self.logger.error(f"Mensagem de erro encontrada: {error_text}")
+                    
             # Verifica se o login foi bem-sucedido
             self.is_logged_in = await self._check_if_logged_in()
             
+            # Screenshot final
+            await self.page.screenshot(path="D:/AutoPy/data/logs/login_result.png")
+            
             if self.is_logged_in:
                 self.logger.info("Login realizado com sucesso")
-                
-                # Salva cookies para uso futuro
-                cookies = await self.context.cookies()
-                self.config["cookies"] = cookies
-                
-                with open("D:/AutoPy/data/accounts.json", 'w', encoding='utf-8') as f:
-                    json.dump(self.config, f, indent=2)
-                
                 return True
             else:
                 self.logger.error("Falha no login")
@@ -156,6 +226,7 @@ class FacebookBot:
                 
         except Exception as e:
             self.logger.error(f"Erro durante o login: {e}")
+            self.logger.error(traceback.format_exc())
             return False
     
     async def _check_if_logged_in(self):
@@ -164,7 +235,6 @@ class FacebookBot:
             # Verifica elementos que só existem quando logado
             feed_element = await self.page.query_selector('[aria-label="Feed de notícias"]')
             profile_button = await self.page.query_selector('[aria-label^="Seu perfil"]')
-            
             return bool(feed_element or profile_button)
         except:
             return False
@@ -289,11 +359,9 @@ class FacebookBot:
                         await self._random_sleep(1, 2)
                         
                         # Usa o file chooser para anexar a imagem
-                        file_chooser = await Promise.all([
-                            self.page.wait_for_file_chooser(),
-                            self.page.click('[aria-label="Adicionar fotos/vídeos"]')
-                        ])
-                        
+                        async with self.page.expect_file_chooser() as fc_info:
+                            await self.page.click('[aria-label="Adicionar fotos/vídeos"]')
+                        file_chooser = await fc_info.value
                         await file_chooser.set_files(image_path)
                         await self._random_sleep(2, 4)  # Aguarda o upload
                 except Exception as e:

@@ -1,13 +1,24 @@
 [
   {
-    "id": "task_1",
-    "type": "post",
-    "target_id": "123456789",
-    "target_name": "Grupo de Exemplo",
+    "category": "tech",
+    "completed": true,
     "content": "Este \u00e9 um post de exemplo agendado para amanh\u00e3.",
-    "scheduled_time": "2025-04-29 17:37",
+    "id": "task_1",
+    "media_path": "",
+    "scheduled_time": "2025-04-29T17:37",
+    "target_id": "123456789",
+    "target_name": "",
+    "type": "post"
+  },
+  {
+    "id": "",
+    "type": "post",
+    "target_id": "2126984021062984",
+    "target_name": "teste 2",
+    "content": "Teste de post 01",
+    "scheduled_time": "2025-05-02T10:20",
     "completed": false,
     "media_path": "",
-    "category": "tech"
+    "category": "general"
   }
 ]

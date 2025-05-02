@@ -115,17 +115,23 @@ function AccountPage() {
     setTestResult(null);
     
     try {
-      const result = await testBot({
+      let result = await testBot({
         email: account.email,
         password: account.password
       });
+      
+      // Verifica se o resultado é um array e converte para objeto se necessário
+      if (Array.isArray(result)) {
+        // Se for um array, utilize o primeiro elemento
+        result = result[0] || { success: false, message: 'Resultado vazio' };
+      }
       
       setTestResult(result);
       
       if (result.success) {
         setSnackbarMessage('Conexão com o Facebook testada com sucesso!');
       } else {
-        setSnackbarMessage(`Falha no teste: ${result.message}`);
+        setSnackbarMessage(`Falha no teste: ${result.message || 'Erro desconhecido'}`);
       }
       setSnackbarOpen(true);
     } catch (error) {
